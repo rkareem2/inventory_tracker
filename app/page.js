@@ -9,6 +9,9 @@ import {
   Button,
   Modal,
   TextField,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import {
   collection,
@@ -19,6 +22,7 @@ import {
   deleteDoc,
   getDoc,
 } from "firebase/firestore";
+
 const style = {
   position: "absolute",
   top: "50%",
@@ -33,16 +37,16 @@ const style = {
   flexDirection: "column",
   gap: 3,
 };
+
 export default function Home() {
   const [inventory, setInventory] = useState([]);
-  const [open, setOpen] = useState([]);
-  const [itemName, serItemName] = useState("");
+  const [open, setOpen] = useState(false);
+  const [itemName, setItemName] = useState("");
 
   const updateInventory = async () => {
-    const snapshot = query(collection(firestore, "inventory"));
-    const docs = await getDoc(snapshot);
+    const snapshot = await getDocs(query(collection(firestore, "inventory")));
     const inventoryList = [];
-    docs.forEach((doc) => {
+    snapshot.forEach((doc) => {
       inventoryList.push({
         name: doc.id,
         ...doc.data(),
@@ -73,14 +77,16 @@ export default function Home() {
       if (quantity === 1) {
         await deleteDoc(docRef);
       } else {
-        await speedDialActionClasses(docRef, { quantity: quantity - 1 });
+        await setDoc(docRef, { quantity: quantity - 1 });
       }
     }
     await updateInventory();
   };
+
   useEffect(() => {
     updateInventory();
   }, []);
+
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
@@ -88,12 +94,20 @@ export default function Home() {
     <Box
       width="100vw"
       height="100vh"
-      display={"flex"}
-      justifyContent={"center"}
-      flexDirection={"column"}
-      alignItems={"center"}
-      gap={2}
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+      gap={4}
+      p={3}
+      bgcolor="#f8f9fa"
     >
+      <Typography variant="h2" color="#333" gutterBottom>
+        Inventory Management
+      </Typography>
+      <Button variant="contained" onClick={handleOpen}>
+        Add New Item
+      </Button>
       <Modal
         open={open}
         onClose={handleClose}
@@ -101,12 +115,11 @@ export default function Home() {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
+          <Typography id="modal-modal-title" variant="h6">
             Add Item
           </Typography>
-          <Stack width="100%" direction={"row"} spacing={2}>
+          <Stack width="100%" direction="row" spacing={2}>
             <TextField
-              id="outlined-basic"
               label="Item"
               variant="outlined"
               fullWidth
@@ -114,7 +127,7 @@ export default function Home() {
               onChange={(e) => setItemName(e.target.value)}
             />
             <Button
-              variant="outlined"
+              variant="contained"
               onClick={() => {
                 addItem(itemName);
                 setItemName("");
@@ -126,44 +139,31 @@ export default function Home() {
           </Stack>
         </Box>
       </Modal>
-      <Button variant="contained" onClick={handleOpen}>
-        Add New Item
-      </Button>
-      <Box border={"1px solid #333"}>
-        <Box
-          width="800px"
-          height="100px"
-          bgcolor={"#ADD8E6"}
-          display={"flex"}
-          justifyContent={"center"}
-          alignItems={"center"}
-        >
-          <Typography variant={"h2"} color={"#333"} textAlign={"center"}>
-            Inventory Items
-          </Typography>
-        </Box>
-        <Stack width="800px" height="300px" spacing={2} overflow={"auto"}>
+      <Box width="800px">
+        <Typography variant="h4" color="#333" textAlign="center" gutterBottom>
+          Inventory Items
+        </Typography>
+        <Stack spacing={3}>
           {inventory.map(({ name, quantity }) => (
-            <Box
-              key={name}
-              width="100%"
-              minHeight="150px"
-              display={"flex"}
-              justifyContent={"space-between"}
-              alignItems={"center"}
-              bgcolor={"#f0f0f0"}
-              paddingX={5}
-            >
-              <Typography variant={"h3"} color={"#333"} textAlign={"center"}>
-                {name.charAt(0).toUpperCase() + name.slice(1)}
-              </Typography>
-              <Typography variant={"h3"} color={"#333"} textAlign={"center"}>
-                Quantity: {quantity}
-              </Typography>
-              <Button variant="contained" onClick={() => removeItem(name)}>
-                Remove
-              </Button>
-            </Box>
+            <Card key={name} variant="outlined" sx={{ bgcolor: "#e9ecef" }}>
+              <CardContent
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography variant="h5">
+                  {name.charAt(0).toUpperCase() + name.slice(1)}
+                </Typography>
+                <Typography variant="h6">Quantity: {quantity}</Typography>
+              </CardContent>
+              <CardActions sx={{ justifyContent: "flex-end" }}>
+                <Button variant="outlined" onClick={() => removeItem(name)}>
+                  Remove
+                </Button>
+              </CardActions>
+            </Card>
           ))}
         </Stack>
       </Box>
